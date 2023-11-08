@@ -1,0 +1,169 @@
+<div class="p-4 flex justify-center">
+  <showcase-trail-effect1 class="shadow-[inset_0_0_10px_10px_rgba(0,0,0,0.2)] flex justify-center w-[800px] h-[600px]">
+    <canvas style="filter: url('#particles-filter')"></canvas>
+  </showcase-trail-effect1>
+  <svg class="hidden" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="particles-filter">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 5 -1" result="goo" />
+      </filter>
+    </defs>
+  </svg>
+</div>
+
+<script>
+  import { returnOrThrow } from "@/utils/guards";
+
+  class TrailEffect1 extends HTMLElement {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    width: number;
+    height: number;
+    circle: {
+      x: number;
+      y: number;
+      radius: number;
+      color: string;
+      velocityX: number;
+      velocityY: number;
+      velocityLimit: number;
+      ticksUnderMouse: number;
+      draw: () => void;
+    };
+    trails: {
+      x: number;
+      y: number;
+      radius: number;
+      color: [number, number, number];
+      opacity: number;
+      createdAtTick: number;
+    }[] = [];
+    mouse = {
+      x: 0,
+      y: 0
+    };
+    canvasBoundingClientRect: {
+      left: number;
+      top: number;
+    } = {
+      left: 0,
+      top: 0
+    };
+    ticks = 0;
+    
+
+    drawTrail(trail: typeof this.trails[0]) {
+      this.ctx.fillStyle = `rgb(${trail.color[0]}, ${trail.color[1]}, ${trail.color[2]})`;
+      this.ctx.globalAlpha = trail.opacity;
+      this.ctx.beginPath();
+      this.ctx.rect(trail.x, trail.y, trail.radius, trail.radius);
+      this.ctx.fill();
+    }
+
+    constructor() {
+      super();
+      
+      this.canvas = returnOrThrow(this.querySelector('canvas'));
+      this.ctx = returnOrThrow(this.canvas.getContext('2d'));
+      this.width = this.canvas.width = 800;
+      this.height = this.canvas.height = 600;
+
+      this.circle = {
+        x: this.width / 2,
+        y: this.height / 2,
+        radius: 40,
+        color: '#FFFFFF',
+        velocityX: 0,
+        velocityY: 0,
+        velocityLimit: 15,
+        ticksUnderMouse: 0,
+        draw: () => {
+          this.ctx.fillStyle = this.circle.color;
+          this.ctx.globalAlpha = 1;
+          this.ctx.beginPath();
+          this.ctx.arc(this.circle.x, this.circle.y, this.circle.radius, 0, Math.PI * 2);
+          this.ctx.fill();
+
+          if (this.ticks % 2 === 0  && (this.circle.velocityX !== 0 || this.circle.velocityY !== 0)) {
+            this.trails.push({
+              x: this.circle.x - this.circle.radius / 2,
+              y: this.circle.y - this.circle.radius / 2,
+              radius: this.circle.radius,
+              color: [255, 255, 255],
+              opacity: 1,
+              createdAtTick: this.ticks
+            });
+          }
+        }
+      };
+
+      this.draw();
+
+      document.addEventListener('mousemove', (e) => {
+        this.mouse.x = e.clientX - this.canvasBoundingClientRect.left;
+        this.mouse.y = e.clientY - this.canvasBoundingClientRect.top;
+      });
+
+      this.canvasBoundingClientRect = this.canvas.getBoundingClientRect();
+      document.addEventListener("scroll", () => {
+        this.canvasBoundingClientRect = this.canvas.getBoundingClientRect();
+      })
+    }
+
+    draw() {
+      this.ctx.clearRect(0, 0, this.width, this.height);
+      for (const trail of this.trails) {
+        trail.radius -= 2;
+        trail.opacity -= 0.06;
+        trail.color = this.ticks - trail.createdAtTick < 10 ? [trail.color[0] - 8, trail.color[1] - 10 , trail.color[2]] : [199, 104, 22];
+        if (trail.radius <= 0 || trail.opacity <= 0) {
+          this.trails.shift();
+          continue;
+        }
+        this.drawTrail(trail);
+      }
+      this.circle.draw();
+
+      if (this.circle.x < this.mouse.x - 20 || this.circle.x > this.mouse.x + 20) {
+        let dx = this.mouse.x - this.circle.x;
+        this.circle.velocityX += dx / 600;
+        this.circle.velocityX = Math.min(this.circle.velocityX, this.circle.velocityLimit);
+        this.circle.velocityX = Math.max(this.circle.velocityX, -this.circle.velocityLimit);
+
+        this.circle.x += this.circle.velocityX;
+      } else if (this.circle.ticksUnderMouse < 100) {
+        let newVelocity = this.circle.velocityX * 0.8
+        this.circle.velocityX = newVelocity;
+        this.circle.x += this.circle.velocityX;
+      } else {
+        this.circle.velocityX = 0;
+      }
+      
+      if (this.circle.y < this.mouse.y - 20 || this.circle.y > this.mouse.y + 20) {
+        let dy = this.mouse.y - this.circle.y;
+        this.circle.velocityY += dy / 600;
+        this.circle.velocityY = Math.min(this.circle.velocityY, this.circle.velocityLimit);
+        this.circle.velocityY = Math.max(this.circle.velocityY, -this.circle.velocityLimit);
+
+        this.circle.y += this.circle.velocityY;
+
+        this.circle.ticksUnderMouse = 0;
+      } else if (this.circle.ticksUnderMouse < 100) {
+        let newVelocity = this.circle.velocityY * 0.8
+        this.circle.velocityY = newVelocity;
+        this.circle.y += this.circle.velocityY;
+
+        this.circle.ticksUnderMouse++;
+      } else {
+        this.circle.velocityY = 0;
+      }
+
+      this.ticks++;
+
+      requestAnimationFrame(this.draw.bind(this));
+    }
+  }
+
+  customElements.define('showcase-trail-effect1', TrailEffect1);
+</script>

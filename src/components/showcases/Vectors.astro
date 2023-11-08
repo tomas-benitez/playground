@@ -1,0 +1,199 @@
+<div class="p-4 flex justify-center select-none">
+  <showcase-vectors class="shadow-[inset_0_0_10px_10px_rgba(0,0,0,0.2)] flex justify-center w-[800px] h-[600px]">
+    <canvas></canvas>
+  </showcase-vectors>
+</div>
+
+<script>
+  import { returnOrThrow } from "@/utils/guards";
+  import { Vector2 } from "@math.gl/core";
+
+  class VectorsElement extends HTMLElement {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    width: number;
+    height: number;
+    mouse = {
+      position: new Vector2(0, 0),
+    };
+    canvasBoundingClientRect: {
+      left: number;
+      top: number;
+    } = {
+      left: 0,
+      top: 0
+    };
+    ticks = 0;
+    arrow = {
+      direction: new Vector2(-1, 1).normalize(),
+      position: new Vector2(0, 0),
+      segmentLength: 20,
+      recalculateDirection: () => {
+        this.arrow.direction = this.mouse.position.clone().subtract(this.arrow.position).normalize();
+      },
+      draw: () => {
+        this.ctx.strokeStyle = 'white';
+        this.ctx.fillStyle = 'white';
+        this.ctx.lineWidth = 2;
+        // draw circle
+        this.ctx.beginPath();
+        this.ctx.arc(this.arrow.position.x, this.arrow.position.y, 5, 0, 2 * Math.PI);
+        this.ctx.fill();
+        // set starting point
+        let startingPoint = this.arrow.position.clone().add(this.arrow.direction.clone().multiplyByScalar(this.arrow.segmentLength  * 2));
+        // transform rotation
+        this.ctx.translate(startingPoint.x, startingPoint.y);
+        this.ctx.rotate(this.arrow.direction.horizontalAngle() - Math.PI);
+        this.ctx.translate(-startingPoint.x, -startingPoint.y);
+        // draw arrow
+        this.ctx.beginPath();
+        this.ctx.moveTo(startingPoint.x, startingPoint.y);
+        this.ctx.lineTo(startingPoint.x + this.arrow.segmentLength, startingPoint.y + this.arrow.segmentLength);
+        this.ctx.moveTo(startingPoint.x, startingPoint.y);
+        this.ctx.lineTo(startingPoint.x + this.arrow.segmentLength, startingPoint.y - this.arrow.segmentLength);
+        this.ctx.stroke();
+        // reset transform
+        this.ctx.resetTransform();
+      }
+    };
+
+    projectileInitialSpeed = 20;
+    projectileMinSpeed = 2;
+    projectileRadius = 5;
+
+    projectiles: {
+      position: Vector2;
+      direction: Vector2;
+      target: Vector2;
+      speed: number;
+    }[] = [];
+
+    projectileCollisions: {
+      position: Vector2;
+      radius: number;
+      opacity: number;
+      lineWidth: number;
+    }[] = [];
+
+    drawProjectileCollision(projectileCollision: typeof this.projectileCollisions[0]) {
+      this.ctx.strokeStyle = 'rgb(120, 120, 120)';
+      this.ctx.lineWidth = projectileCollision.lineWidth;
+      this.ctx.globalAlpha = projectileCollision.opacity;
+      this.ctx.beginPath();
+      this.ctx.arc(projectileCollision.position.x, projectileCollision.position.y, projectileCollision.radius, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.closePath();
+      this.ctx.strokeStyle = 'red';
+      this.ctx.lineWidth = projectileCollision.lineWidth / 2;
+      this.ctx.globalAlpha = projectileCollision.opacity / 2;
+      this.ctx.beginPath();
+      this.ctx.arc(projectileCollision.position.x, projectileCollision.position.y, projectileCollision.radius / 2, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.closePath();
+      this.ctx.strokeStyle = 'black';
+      this.ctx.lineWidth = projectileCollision.lineWidth / 20;
+      this.ctx.globalAlpha = projectileCollision.opacity / 2;
+      this.ctx.beginPath();
+      this.ctx.arc(projectileCollision.position.x, projectileCollision.position.y, projectileCollision.radius * 2, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.closePath();
+      this.ctx.globalAlpha = 1;
+    }
+
+    updateProjectileCollision(projectileCollision: typeof this.projectileCollisions[0]) {
+      projectileCollision.radius += this.projectileInitialSpeed / 4;
+      projectileCollision.opacity -= 0.024;
+      projectileCollision.lineWidth += 15;
+      if (projectileCollision.opacity < 0) {
+        this.projectileCollisions = this.projectileCollisions.filter((p) => p !== projectileCollision);
+      }
+    }
+
+    drawProjectile(projectile: typeof this.projectiles[0]) {
+      this.ctx.strokeStyle = 'red';
+      this.ctx.beginPath();
+      this.ctx.arc(projectile.target.x, projectile.target.y, this.projectileRadius, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.closePath();
+      
+      this.ctx.strokeStyle = 'white';
+      this.ctx.beginPath();
+      this.ctx.arc(projectile.position.x, projectile.position.y, this.projectileRadius, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.closePath();
+    }
+
+    updateProjectile(projectile: typeof this.projectiles[0]) {
+      projectile.position.add(projectile.direction.clone().multiplyByScalar(projectile.speed));
+      if (projectile.speed > this.projectileMinSpeed) {
+        projectile.speed *= 0.95;
+      }
+      if (projectile.position.distance(projectile.target) < projectile.speed + this.projectileRadius) {
+        this.projectiles = this.projectiles.filter((p) => p !== projectile);
+        this.projectileCollisions.push({
+          position: projectile.target.clone(),
+          radius: 0,
+          opacity: .5,
+          lineWidth: 0,
+        });
+      }
+    }
+
+    constructor() {
+      super();
+      
+      this.canvas = returnOrThrow(this.querySelector('canvas'));
+      this.ctx = returnOrThrow(this.canvas.getContext('2d'));
+      this.width = this.canvas.width = 800;
+      this.height = this.canvas.height = 600;
+
+      this.arrow.position.set(this.width / 2, this.height / 2);
+
+      this.draw();
+
+      document.addEventListener('mousemove', (e) => {
+        this.mouse.position.set(e.clientX - this.canvasBoundingClientRect.left, e.clientY - this.canvasBoundingClientRect.top);
+      });
+
+      this.canvasBoundingClientRect = this.canvas.getBoundingClientRect();
+      document.addEventListener("scroll", () => {
+        this.canvasBoundingClientRect = this.canvas.getBoundingClientRect();
+      })
+
+      this.canvas.addEventListener('click', () => {
+        const projectileDirection = this.arrow.direction.clone();
+        const targetPosition = projectileDirection.clone().multiplyByScalar(this.mouse.position.distance(this.arrow.position)).add(this.arrow.position);
+        this.projectiles.push({
+          position: this.arrow.position.clone(),
+          direction: projectileDirection,
+          target: targetPosition,
+          speed: this.projectileInitialSpeed,
+        });
+      });
+    }
+
+    draw() {
+      this.ctx.clearRect(0, 0, this.width, this.height);
+
+      this.arrow.recalculateDirection();
+      this.arrow.draw();
+
+      this.projectiles.forEach((projectile) => {
+        this.updateProjectile(projectile);
+        this.drawProjectile(projectile);
+      });
+
+      this.projectileCollisions.forEach((projectileCollision) => {
+        this.updateProjectileCollision(projectileCollision);
+        if (projectileCollision.opacity < 0) return;
+        this.drawProjectileCollision(projectileCollision);
+      });
+
+      this.ticks++;
+
+      requestAnimationFrame(this.draw.bind(this));
+    }
+  }
+
+  customElements.define('showcase-vectors', VectorsElement);
+</script>

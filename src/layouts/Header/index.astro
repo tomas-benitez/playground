@@ -1,0 +1,208 @@
+<header class="fixed top-0 left-0 right-0 z-50 h-screen">
+  <nav class="flex justify-center items-center h-full">
+    <ul>
+      <li class="inline-block">
+        <a href="#about-me" class="flex items-center">
+          <span class="font-bold uppercase">À PROPOS DE MOI</span>
+        </a>
+      </li>
+      <li class="inline-block">
+        <a href="#projets" class="flex items-center">
+          <span class="font-bold uppercase">Projets</span>
+        </a>
+      </li>
+      <li class="inline-block">
+        <a href="#contact" class="flex items-center">
+          <span class="font-bold uppercase">
+            Me contacter
+          </span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<script>
+  let headerIsExpanded = true;
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const header = document.querySelector("header");
+    const links = document.querySelectorAll(
+      "header a"
+    ) as NodeListOf<HTMLAnchorElement>;
+
+    if (!header) return;
+
+    animateLinksEnter(links);
+
+    if (window.scrollY > 0) {
+      transitionHeader("collapsed", header, links);
+    }
+
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 0 && headerIsExpanded) {
+        transitionHeader("collapsed", header, links);
+      } else if (window.scrollY === 0 && !headerIsExpanded) {
+        transitionHeader("expanded", header, links);
+      }
+    });
+  });
+
+  function transitionHeader(
+    transitionTo: "expanded" | "collapsed",
+    header: HTMLElement,
+    links: NodeListOf<HTMLAnchorElement>
+  ) {
+    if (transitionTo === "collapsed") {
+      header.style.height = "var(--header-final-height)";
+      header.classList.add("collapsed");
+      links.forEach((link) => {
+        link.style.fontSize = "var(--links-final-font-size)";
+      });
+      headerIsExpanded = false;
+    } else {
+      header.style.height = "var(--header-initial-height)";
+      header.classList.remove("collapsed");
+      links.forEach((link) => {
+        link.style.fontSize = "var(--links-initial-font-size)";
+      });
+      headerIsExpanded = true;
+    }
+  }
+
+  function animateLinksEnter(links: NodeListOf<HTMLAnchorElement>) {
+    links.forEach((link, i) => {
+      link.style.transitionDelay = `1s, ${i * 0.4}s, ${i * 0.4}s, ${i * 0.4}s`;
+    });
+    setTimeout(() => {
+      links.forEach((link) => {
+        link.style.opacity = "1";
+        link.style.transform = "translateY(0)";
+      });
+    }, 500);
+  }
+</script>
+
+<style>
+  header {
+    --header-initial-height: 100vh;
+    --header-final-height: var(--header-height);
+    --links-initial-font-size: 1.5rem;
+    --links-final-font-size: 1rem;
+    opacity: 1;
+    transition:
+      height 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 0.2s,
+      background-color 0.2s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      box-shadow 0.2s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 0.2s;
+    height: var(--header-initial-height);
+    @apply shadow-none;
+  }
+
+  header ul {
+    display: flex;
+    flex-direction: column;
+    transform: translateY(0);
+    transition: transform 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s;
+  }
+
+  header ul li {
+    margin-bottom: 3rem;
+  }
+
+  header.collapsed {
+    opacity: 0;
+  }
+
+  header.collapsed ul {
+    transform: translateY(-100%);
+  }
+
+  @media (min-width: 768px) {
+    header {
+      --links-initial-font-size: 1.875rem;
+    }
+
+    header ul {
+      display: flex;
+      flex-direction: row;
+    }
+
+    header ul li {
+      margin-bottom: 0;
+      margin-left: 3rem;
+    }
+
+    header.collapsed {
+      opacity: 1;
+    }
+
+    header.collapsed ul {
+      transform: translateY(0);
+    }
+  }
+
+  header::before {
+    @apply absolute -inset-16;
+    content: "";
+    background: linear-gradient(280deg, #5dc0ff 10%, #008be3 14%, #005a9200 80%),
+      linear-gradient(35deg, #002035, #005a92 70%, #008be3);
+    transition:
+      opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      transform 1s cubic-bezier(0.34, 0.76, 0.51, 0.17);
+    filter: blur(30px);
+  }
+
+  header.collapsed {
+    @apply bg-black/40 shadow-xl;
+    transition:
+      height 1s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      background-color 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s,
+      box-shadow 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s,
+      opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s;
+  }
+
+  header.collapsed::before {
+    opacity: 0;
+    transform: translateY(-300px);
+  }
+
+  .bg-image {
+    @apply absolute top-0 left-0 right-0 bottom-0 object-cover object-bottom w-full h-full opacity-0;
+    transition: opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s;
+  }
+
+  header.collapsed .bg-image {
+    @apply opacity-60;
+  }
+
+  .bg-image-overlay {
+    @apply absolute top-0 left-0 right-0 bottom-0 opacity-0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 90%,
+      rgba(0, 0, 0, 0) 400%
+    );
+    transition: opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17) 1s;
+  }
+
+  header.collapsed .bg-image-overlay {
+    @apply opacity-60;
+  }
+
+  header a {
+    transition:
+      font-size 0.5s ease-in-out,
+      opacity 1s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      transform 1s cubic-bezier(0.34, 0.76, 0.51, 0.17),
+      color 0.5s ease-in-out;
+    font-size: var(--links-initial-font-size);
+    transform: translateY(100%);
+    opacity: 0;
+    @apply text-[hsl(23,100%,85%)];
+  }
+
+  header.collapsed a {
+    @apply text-slate-300;
+  }
+</style>

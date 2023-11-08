@@ -1,0 +1,70 @@
+---
+import Header from "./Header/index.astro";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html class="scroll-smooth lg:snap-y lg:snap-mandatory font-body" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&family=Titillium+Web:wght@200;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="text-zinc-100">
+    <div class="relative snap-start snap-always">
+      <img src="/code-image-start-2.jpg" alt="Javascript code on a screen" />
+    </div>
+    <main class="snap-start snap-always pb-12">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  :root {
+    --header-height: 5rem;
+    --body-bg: #003a5f;
+  }
+
+  html {
+    scroll-padding-top: var(--header-height);
+  }
+
+  body {
+    background-color: var(--body-bg);
+  }
+
+  img {
+    width: 100%;
+    height: calc(var(--header-height) + 20rem);
+    object-fit: cover;
+    object-position: bottom center;
+  }
+
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+</style>

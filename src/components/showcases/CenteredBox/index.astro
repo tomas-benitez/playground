@@ -1,0 +1,18 @@
+<div class="relative p-4 flex flex-col select-none">
+  <div id="centered-box-showcase-controls" class="flex flex-col pb-4"></div>
+  <centered-box-showcase class="relative flex justify-center w-full h-[600px]">
+    <div
+    class="z-20 absolute inset-0 flex justify-center items-center"
+  >
+    <div class="bg-white rounded-md p-12">
+      <button class="bg-slate-800 px-12 py-4 rounded-md" type="button">Click me</button>
+    </div>
+  </div>
+  </centered-box-showcase>
+</div>
+
+<script>
+  import CenteredBoxShowcase from "./webComponent";
+
+  customElements.define("centered-box-showcase", CenteredBoxShowcase);
+</script>
