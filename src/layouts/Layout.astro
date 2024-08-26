@@ -1,9 +1,40 @@
 ---
+
+import classnames from "classnames";
+
 interface Props {
   title: string;
+  showcaseName: string;
 }
 
-const { title } = Astro.props;
+const showcases = [
+  {
+    name: "TrailEffect1",
+    path: "/",
+  },
+  {
+    name: "Tiles",
+    path: "/tiles",
+  },
+  {
+    name: "Tiles2",
+    path: "/tiles2",
+  },
+  {
+    name: "Tiles3",
+    path: "/tiles3",
+  },
+  {
+    name: "Vectors",
+    path: "/vectors",
+  },
+  {
+    name: "CenteredBox",
+    path: "/centered-box",
+  },
+];
+
+const { title, showcaseName } = Astro.props;
 ---
 
 <!doctype html>
@@ -28,6 +59,21 @@ const { title } = Astro.props;
   <body class="text-zinc-100">
     <div class="relative snap-start snap-always">
       <img src="./code-image-start-2.jpg" alt="Javascript code on a screen" />
+      <ul class="flex items-center justify-center absolute inset-0 space-x-4">
+          {showcases.map((showcase) => (
+            <li>
+              <a
+                href={showcase.path}
+                class={classnames(
+                  "text-2xl font-bold text-zinc-700 hover:text-zinc-800 px-4 py-2 rounded-md shadow-md", 
+                  showcase.name === showcaseName ? "bg-accent-500 pointer-events-none" : "bg-white"
+                )}
+              >
+                {showcase.name}
+              </a>
+            </li>
+          ))}
+      </ul>
     </div>
     <main class="snap-start snap-always pb-12">
       <slot />

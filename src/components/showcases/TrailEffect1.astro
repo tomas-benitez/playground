@@ -1,6 +1,8 @@
 <div class="p-4 flex justify-center">
-  <showcase-trail-effect1 class="shadow-[inset_0_0_10px_10px_rgba(0,0,0,0.2)] flex justify-center w-[800px] h-[600px]">
+  <showcase-trail-effect1 class="overflow-hidden relative shadow-[inset_0_0_10px_10px_rgba(0,0,0,0.2)] flex justify-center w-[800px] h-[600px]">
     <canvas style="filter: url('#particles-filter')"></canvas>
+    <img id="face-savoring-food-emoji" class="absolute hidden left-[-40px] top-[-40px]" src="/emojis/face-savoring-food.png" alt="emoji of face savoring food" width="80" height="80"/>
+    <img id="angry-face-emoji" class="absolute hidden left-[-40px] top-[-40px]" src="/emojis/angry-face.png" alt="emoji of angry face" width="80" height="80"/>
   </showcase-trail-effect1>
   <svg class="hidden" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -51,7 +53,32 @@
       top: 0
     };
     ticks = 0;
+    emojis: {
+      id: string;
+      img: HTMLImageElement | null;
+    }[] = [
+      {
+        id: 'face-savoring-food-emoji',
+        img: null
+      },
+      {
+        id: 'angry-face-emoji',
+        img: null
+      }
+    ];
+    selectedEmojiIndex = 0;
     
+    updateSelectedEmojiIndex(index: number){
+      if (index === this.selectedEmojiIndex) return;
+      this.selectedEmojiIndex = index;
+      this.emojis.forEach(emoji => {
+        emoji.img?.style.setProperty("display", "none");
+      });
+      if (this.emojis[this.selectedEmojiIndex].img) {
+        this.emojis[this.selectedEmojiIndex].img?.style.setProperty("transform", `translate(${this.circle.x}px, ${this.circle.y + 20}px)`);
+        this.emojis[this.selectedEmojiIndex].img?.style.setProperty("display", "block");
+      }
+    }
 
     drawTrail(trail: typeof this.trails[0]) {
       this.ctx.fillStyle = `rgb(${trail.color[0]}, ${trail.color[1]}, ${trail.color[2]})`;
@@ -82,13 +109,13 @@
           this.ctx.fillStyle = this.circle.color;
           this.ctx.globalAlpha = 1;
           this.ctx.beginPath();
-          this.ctx.arc(this.circle.x, this.circle.y, this.circle.radius, 0, Math.PI * 2);
+          this.ctx.arc(this.circle.x, this.circle.y + 20, this.circle.radius, 0, Math.PI * 2);
           this.ctx.fill();
 
           if (this.ticks % 2 === 0  && (this.circle.velocityX !== 0 || this.circle.velocityY !== 0)) {
             this.trails.push({
               x: this.circle.x - this.circle.radius / 2,
-              y: this.circle.y - this.circle.radius / 2,
+              y: (this.circle.y + 20) - this.circle.radius / 2,
               radius: this.circle.radius,
               color: [255, 255, 255],
               opacity: 1,
@@ -97,6 +124,15 @@
           }
         }
       };
+
+      this.emojis.forEach(emoji => {
+        emoji.img = returnOrThrow(this.querySelector(`#${emoji.id}`));
+      });
+
+      if (this.emojis[this.selectedEmojiIndex].img) {
+        this.emojis[this.selectedEmojiIndex].img?.style.setProperty("transform", `translate(${this.circle.x}px, ${this.circle.y + 20}px)`);
+        this.emojis[this.selectedEmojiIndex].img?.style.setProperty("display", "block");
+      }
 
       this.draw();
 
@@ -109,6 +145,17 @@
       document.addEventListener("scroll", () => {
         this.canvasBoundingClientRect = this.canvas.getBoundingClientRect();
       })
+
+      // this.addEventListener('click', () => {
+      //   this.selectedEmojiIndex = (this.selectedEmojiIndex + 1) % this.emojis.length;
+      //   this.emojis.forEach(emoji => {
+      //     emoji.img?.style.setProperty("display", "none");
+      //   });
+      //   if (this.emojis[this.selectedEmojiIndex].img) {
+      //     this.emojis[this.selectedEmojiIndex].img?.style.setProperty("transform", `translate(${this.circle.x - this.circle.radius / 2}px, ${this.circle.y - this.circle.radius / 2}px)`);
+      //     this.emojis[this.selectedEmojiIndex].img?.style.setProperty("display", "block");
+      //   }
+      // });
     }
 
     draw() {
@@ -124,6 +171,10 @@
         this.drawTrail(trail);
       }
       this.circle.draw();
+
+      if (this.emojis[this.selectedEmojiIndex].img) {
+        this.emojis[this.selectedEmojiIndex].img?.style.setProperty("transform", `translate(${this.circle.x}px, ${this.circle.y + 20}px)`);
+      }
 
       if (this.circle.x < this.mouse.x - 20 || this.circle.x > this.mouse.x + 20) {
         let dx = this.mouse.x - this.circle.x;
@@ -157,6 +208,14 @@
         this.circle.ticksUnderMouse++;
       } else {
         this.circle.velocityY = 0;
+      }
+
+      if (!(this.circle.y < this.mouse.y - 20 && this.circle.y > this.mouse.y + 20 && this.circle.x < this.mouse.x - 20 && this.circle.x > this.mouse.x + 20) && ((this.circle.velocityX > -0.001 && this.circle.velocityX < 0.001) && (this.circle.velocityY > -0.001 && this.circle.velocityY < 0.001))) {
+        this.updateSelectedEmojiIndex(0);
+        this.classList.add("cursor-grab");
+      } else {
+        this.updateSelectedEmojiIndex(1);
+        this.classList.remove("cursor-grab");
       }
 
       this.ticks++;
